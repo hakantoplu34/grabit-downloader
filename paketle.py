@@ -53,7 +53,7 @@ def build_mac():
                     continue
                 p = Path(root) / f
                 arc = p.relative_to(APP.parent).as_posix()
-                add_file(z, p, arc, executable=arc.endswith("Contents/MacOS/GrabIt"))
+                add_file(z, p, arc, executable=arc.endswith(("Contents/MacOS/GrabIt", "Resources/launcher.sh")))
     return out
 
 

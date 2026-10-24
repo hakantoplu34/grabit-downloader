@@ -16,8 +16,11 @@ Uygulama Uygulamalar klasörüne kurulur ve açılır. Güvenlik uyarısı çık
 
 ## Windows kurulumu
 
-1. [GrabIt-Downloader-Windows.zip](https://github.com/hakantoplu34/grabit-downloader/raw/main/indir/GrabIt-Downloader-Windows.zip) dosyasını indir ve bir klasöre çıkar.
-2. `GrabIt-Baslat.bat` dosyasına çift tıkla. Python, ffmpeg ve deno ilk açılışta otomatik kurulur.
+1. [GrabIt-Downloader-Setup.exe](https://github.com/hakantoplu34/grabit-downloader/releases/latest/download/GrabIt-Downloader-Setup.exe) dosyasını indirip çalıştır.
+2. "Windows bilgisayarınızı korudu" uyarısı çıkarsa **Ek bilgi → Yine de çalıştır**.
+3. Kurulum bitince GrabIt Downloader açılır. Python, ffmpeg ve deno ilk açılışta kendiliğinden kurulur. Sonra Başlat menüsünden ya da masaüstü kısayolundan açabilirsin.
+
+Tüm dosyalar: [Releases](https://github.com/hakantoplu34/grabit-downloader/releases/latest)
 
 ## Kullanım
 
@@ -40,6 +43,8 @@ Uygulama Uygulamalar klasörüne kurulur ve açılır. Güvenlik uyarısı çık
 | `kur.sh` | Mac tek satır kurulum betiği |
 | `indir/` | Hazır Mac ve Windows paketleri |
 | `paketle.py` | `indir/` içindeki zip'leri üretir |
+| `build/` | Mac .dmg ve Windows Setup.exe derleme dosyaları, [imzalama rehberi](build/IMZALAMA.md) |
+| `.github/workflows/` | Yeni sürüm etiketiyle otomatik derleme ve yayınlama |
 
 Kişisel kullanım içindir. İndirdiğin içeriklerin haklarına ve sitelerin kullanım koşullarına dikkat et.
 

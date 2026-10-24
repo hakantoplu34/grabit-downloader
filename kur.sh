@@ -5,7 +5,8 @@
 
 REPO="hakantoplu34/grabit-downloader"
 APP="GrabIt Downloader"
-ZIP_URL="https://raw.githubusercontent.com/$REPO/main/indir/GrabIt-Downloader-Mac.zip"
+ZIP_URL="https://github.com/$REPO/releases/latest/download/GrabIt-Downloader-Mac.zip"
+ZIP_YEDEK="https://raw.githubusercontent.com/$REPO/main/indir/GrabIt-Downloader-Mac.zip"
 
 say()  { printf "\n  %s\n" "$1"; }
 fail() { printf "\n  [HATA] %s\n\n" "$1"; exit 1; }
@@ -27,7 +28,9 @@ TMP="$(mktemp -d)" || fail "Geçici klasör oluşturulamadı."
 trap 'rm -rf "$TMP"' EXIT
 
 say "İndiriliyor…"
-curl -fL --progress-bar --retry 3 -o "$TMP/app.zip" "$ZIP_URL" || fail "İndirilemedi. İnternet bağlantını kontrol et."
+curl -fL --progress-bar --retry 3 -o "$TMP/app.zip" "$ZIP_URL" \
+  || curl -fL --progress-bar --retry 3 -o "$TMP/app.zip" "$ZIP_YEDEK" \
+  || fail "İndirilemedi. İnternet bağlantını kontrol et."
 ditto -x -k "$TMP/app.zip" "$TMP/x" || fail "Dosya açılamadı."
 [ -d "$TMP/x/$APP.app" ] || fail "İndirilen dosyada uygulama bulunamadı."
 
@@ -41,7 +44,7 @@ fi
 say "Uygulamalar klasörüne yerleştiriliyor…"
 rm -rf "$DEST/$APP.app" "$DEST/GrabIt.app" 2>/dev/null
 ditto "$TMP/x/$APP.app" "$DEST/$APP.app" || fail "Uygulama kopyalanamadı."
-chmod +x "$DEST/$APP.app/Contents/MacOS/GrabIt"
+chmod +x "$DEST/$APP.app/Contents/MacOS/GrabIt" "$DEST/$APP.app/Contents/Resources/launcher.sh"
 xattr -cr "$DEST/$APP.app" 2>/dev/null
 
 say "Hazır! GrabIt Downloader açılıyor."

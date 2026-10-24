@@ -1,0 +1,102 @@
+name: Derle ve yayınla
+
+# v ile başlayan bir etiket (ör. v1.2.0) gönderilince Mac .dmg ve Windows Setup.exe
+# derlenir ve GitHub Releases'a yüklenir. Actions sekmesinden elle de çalıştırılabilir
+# (o zaman sadece derler, dosyalar çalıştırmanın "Artifacts" kısmında görünür).
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  mac:
+    name: Mac (.dmg)
+    runs-on: macos-14
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sürüm
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then V="${GITHUB_REF_NAME#v}"; else V="0.0.0-dev"; fi
+          echo "VERSION=$V" >> "$GITHUB_ENV"
+      - name: Derle, imzala, onaylat
+        env:
+          MACOS_CERT_P12: ${{ secrets.MACOS_CERT_P12 }}
+          MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+        run: bash build/mac-build.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mac
+          path: |
+            out/GrabIt-Downloader.dmg
+            out/GrabIt-Downloader-Mac.zip
+            out/mac-durum.txt
+
+  windows:
+    name: Windows (Setup.exe)
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sürüm
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then V="${GITHUB_REF_NAME#v}"; else V="0.0.0"; fi
+          echo "VERSION=$V" >> "$GITHUB_ENV"
+      - name: Inno Setup
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress | Out-Null }
+          if (-not (Test-Path $iscc)) { throw "Inno Setup kurulamadı" }
+          & $iscc "/DAppVersion=$env:VERSION" "build\windows-setup.iss"
+          if ($LASTEXITCODE -ne 0) { throw "Setup derlenemedi" }
+          Compress-Archive -Path src\* -DestinationPath out\GrabIt-Downloader-Windows.zip -Force
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: |
+            out/GrabIt-Downloader-Setup.exe
+            out/GrabIt-Downloader-Windows.zip
+
+  release:
+    name: Yayınla
+    needs: [mac, windows]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Release oluştur
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          DURUM="$(cat dist/mac-durum.txt)"
+          if [ "$DURUM" = "imzali-onayli" ]; then
+            MAC="**Mac:** \`GrabIt-Downloader.dmg\` dosyasını indir, aç, uygulamayı **Uygulamalar** klasörüne sürükle."
+          else
+            MAC="**Mac:** Terminal'i aç ve şu satırı yapıştır (bu sürüm henüz Apple imzalı değil, .dmg ilk açılışta uyarı verir):
+          \`\`\`
+          curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/kur.sh | bash
+          \`\`\`"
+          fi
+          cat > notes.md <<EOF
+          $MAC
+
+          **Windows:** \`GrabIt-Downloader-Setup.exe\` dosyasını indirip çalıştır. "Windows bilgisayarınızı korudu" uyarısı çıkarsa **Ek bilgi → Yine de çalıştır**.
+
+          İlk açılışta gerekli bileşenler (Python, ffmpeg, yt-dlp) kendiliğinden kurulur.
+          EOF
+          sed -i 's/^          //' notes.md
+          gh release create "$GITHUB_REF_NAME" --repo "${{ github.repository }}" \
+            --title "GrabIt Downloader ${GITHUB_REF_NAME#v}" --notes-file notes.md \
+            dist/GrabIt-Downloader.dmg dist/GrabIt-Downloader-Mac.zip \
+            dist/GrabIt-Downloader-Setup.exe dist/GrabIt-Downloader-Windows.zip
