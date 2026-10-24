@@ -46,7 +46,7 @@ Repo → **Settings → Secrets and variables → Actions → New repository sec
 
 ## 5. Yeni sürüm yayınla
 
-Secrets eklendikten sonra yeni bir sürüm etiketi gönderilince (ör. `v1.2.1`) GitHub:
+Secrets eklendikten sonra repodaki `VERSION` dosyasındaki numarayı artır (GitHub'da dosyayı açıp kalem simgesiyle düzenleyebilirsin, ör. `1.2.0` → `1.2.1`). GitHub:
 Mac .dmg'yi imzalar ve onaylatır, Windows Setup.exe'yi derler, ikisini **Releases** sayfasına koyar.
 
 Ne olduğunu **Actions** sekmesinden izleyebilirsin. Mac adımının özetinde "Apple sertifikası bulundu, imzalanıyor" ve "Apple'a onaylatılıyor" satırları görünmeli.

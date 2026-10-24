@@ -1,10 +1,13 @@
 name: Derle ve yayınla
 
-# v ile başlayan bir etiket (ör. v1.2.0) gönderilince Mac .dmg ve Windows Setup.exe
-# derlenir ve GitHub Releases'a yüklenir. Actions sekmesinden elle de çalıştırılabilir
-# (o zaman sadece derler, dosyalar çalıştırmanın "Artifacts" kısmında görünür).
+# Yeni sürüm yayınlamak için repodaki VERSION dosyasındaki numarayı artır (ör. 1.2.1).
+# GitHub, Mac .dmg ve Windows Setup.exe'yi derler, v1.2.1 etiketini ve Releases sayfasını
+# kendisi oluşturur. Aynı numara zaten yayınlandıysa sadece derler, yeniden yayınlamaz.
+# Actions sekmesinden "Run workflow" ile elle de çalıştırılabilir.
 on:
   push:
+    branches: [main]
+    paths: ["VERSION"]
     tags: ["v*"]
   workflow_dispatch:
 
@@ -19,8 +22,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Sürüm
+        shell: bash
         run: |
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then V="${GITHUB_REF_NAME#v}"; else V="0.0.0-dev"; fi
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then V="${GITHUB_REF_NAME#v}"; else V="$(tr -d '[:space:]' < VERSION)"; fi
           echo "VERSION=$V" >> "$GITHUB_ENV"
       - name: Derle, imzala, onaylat
         env:
@@ -47,7 +51,7 @@ jobs:
       - name: Sürüm
         shell: bash
         run: |
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then V="${GITHUB_REF_NAME#v}"; else V="0.0.0"; fi
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then V="${GITHUB_REF_NAME#v}"; else V="$(tr -d '[:space:]' < VERSION)"; fi
           echo "VERSION=$V" >> "$GITHUB_ENV"
       - name: Inno Setup
         shell: pwsh
@@ -68,14 +72,26 @@ jobs:
   release:
     name: Yayınla
     needs: [mac, windows]
-    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+      - name: Etiket
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then TAG="$GITHUB_REF_NAME"; else TAG="v$(tr -d '[:space:]' < VERSION)"; fi
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
+          if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            echo "$TAG zaten yayınlanmış, yeniden yayınlanmayacak (VERSION'ı artır)."
+            echo "SKIP=1" >> "$GITHUB_ENV"
+          fi
       - uses: actions/download-artifact@v4
+        if: env.SKIP != '1'
         with:
           path: dist
           merge-multiple: true
       - name: Release oluştur
+        if: env.SKIP != '1'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -96,7 +112,7 @@ jobs:
           İlk açılışta gerekli bileşenler (Python, ffmpeg, yt-dlp) kendiliğinden kurulur.
           EOF
           sed -i 's/^          //' notes.md
-          gh release create "$GITHUB_REF_NAME" --repo "${{ github.repository }}" \
-            --title "GrabIt Downloader ${GITHUB_REF_NAME#v}" --notes-file notes.md \
+          gh release create "$TAG" --repo "${{ github.repository }}" --target "$GITHUB_SHA" \
+            --title "GrabIt Downloader ${TAG#v}" --notes-file notes.md \
             dist/GrabIt-Downloader.dmg dist/GrabIt-Downloader-Mac.zip \
             dist/GrabIt-Downloader-Setup.exe dist/GrabIt-Downloader-Windows.zip
