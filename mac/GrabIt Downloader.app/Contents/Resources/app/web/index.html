@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GrabIt Downloader</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<style>
+:root{
+  --bg:#0e0f12; --panel:#16181d; --panel2:#1d2027; --line:#2a2e37; --text:#eceef2; --muted:#9aa1ad;
+  --dim:#6b7280; --accent:#ff5a36; --accent2:#ff8a5c; --ok:#3ecf8e; --warn:#f5b942; --err:#ff5470;
+  --radius:14px; --shadow:0 10px 30px rgba(0,0,0,.35);
+  --font:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 var(--font)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+.wrap{max-width:920px;margin:0 auto;padding:28px 20px 80px}
+header{display:flex;align-items:center;gap:14px;margin-bottom:26px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:22px;letter-spacing:-.02em}
+.logo i{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center}
+.logo i svg{width:18px;height:18px}
+.logo .dl{font-weight:500;color:var(--muted);margin-left:-4px}
+footer{margin-top:48px;text-align:center;color:var(--dim);font-size:11px;letter-spacing:.24em;font-weight:600}
+.pills{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
+.pill{font-size:12px;padding:4px 9px;border-radius:99px;background:var(--panel);border:1px solid var(--line);color:var(--muted);display:flex;gap:6px;align-items:center}
+.pill b{width:7px;height:7px;border-radius:50%;background:var(--dim)}
+.pill.ok b{background:var(--ok)} .pill.bad b{background:var(--err)} .pill.warn b{background:var(--warn)}
+.iconbtn{background:var(--panel);border:1px solid var(--line);border-radius:10px;width:38px;height:38px;display:grid;place-items:center;color:var(--muted)}
+.iconbtn:hover{color:var(--text);border-color:#3a3f4a}
+.iconbtn svg{width:18px;height:18px}
+
+.hero{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:var(--shadow)}
+.inputrow{display:flex;gap:10px;align-items:flex-start}
+textarea#url{flex:1;min-height:52px;max-height:220px;resize:none;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:14px 16px;outline:none;line-height:1.5}
+textarea#url:focus{border-color:var(--accent)}
+.btn{border:1px solid var(--line);background:var(--panel2);border-radius:12px;padding:0 16px;height:52px;font-weight:600;white-space:nowrap}
+.btn:hover{border-color:#3a3f4a}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{background:#ff6c4b}
+.btn:disabled{opacity:.5;cursor:default}
+.sub{display:flex;gap:16px;align-items:center;margin-top:12px;color:var(--muted);font-size:13px;flex-wrap:wrap}
+.check{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
+.check input{accent-color:var(--accent);width:16px;height:16px}
+.sites{margin-left:auto;color:var(--dim)}
+
+.preview{display:none;margin-top:16px;border-top:1px solid var(--line);padding-top:16px}
+.preview.show{display:block}
+.pv{display:flex;gap:16px}
+.thumb{width:200px;aspect-ratio:16/9;border-radius:10px;background:var(--panel2) center/cover no-repeat;flex:none;position:relative}
+.thumb span{position:absolute;right:6px;bottom:6px;background:rgba(0,0,0,.75);font-size:12px;padding:2px 6px;border-radius:6px;font-family:var(--mono)}
+.pvmeta{min-width:0;flex:1}
+.pvtitle{font-weight:700;font-size:16px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pvsub{color:var(--muted);font-size:13px;margin-top:4px}
+.qual{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.q{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:8px 12px;text-align:left;min-width:92px}
+.q small{display:block;color:var(--dim);font-size:11px;margin-top:1px}
+.q.on{border-color:var(--accent);background:rgba(255,90,54,.10)}
+.q.on small{color:var(--accent2)}
+.pvactions{display:flex;justify-content:flex-end;margin-top:14px;gap:10px;align-items:center}
+.hint{color:var(--muted);font-size:13px;margin-right:auto}
+.loading{display:none;align-items:center;gap:10px;color:var(--muted);margin-top:16px;font-size:14px}
+.loading.show{display:flex}
+.spin{width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:s .8s linear infinite}
+@keyframes s{to{transform:rotate(360deg)}}
+.errbox{display:none;margin-top:14px;background:rgba(255,84,112,.08);border:1px solid rgba(255,84,112,.35);color:#ffb3c0;border-radius:10px;padding:10px 12px;font-size:14px}
+.errbox.show{display:block}
+
+.listhead{display:flex;align-items:center;gap:8px;margin:30px 0 12px}
+.listhead h2{font-size:16px;margin:0;margin-right:auto}
+.tab{background:none;border:1px solid transparent;color:var(--muted);border-radius:8px;padding:5px 10px;font-size:13px}
+.tab.on{border-color:var(--line);background:var(--panel);color:var(--text)}
+.linkbtn{background:none;border:none;color:var(--muted);font-size:13px;padding:5px 8px;border-radius:8px}
+.linkbtn:hover{color:var(--text);background:var(--panel)}
+.jobs{display:flex;flex-direction:column;gap:10px}
+.job{display:flex;gap:14px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:12px}
+.job .jt{width:120px;aspect-ratio:16/9;border-radius:8px;background:var(--panel2) center/cover no-repeat;flex:none}
+.jb{flex:1;min-width:0}
+.jtitle{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jmeta{display:flex;gap:10px;color:var(--muted);font-size:12px;margin-top:2px;flex-wrap:wrap}
+.tag{background:var(--panel2);border-radius:6px;padding:0 6px;color:var(--text)}
+.bar{height:6px;background:var(--panel2);border-radius:99px;overflow:hidden;margin:10px 0 6px}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:99px;transition:width .5s}
+.job.done .bar i{background:var(--ok)}
+.job.error .bar i{background:var(--err)}
+.job.stopped .bar i{background:var(--dim)}
+.jstate{display:flex;gap:12px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.jstate .st{color:var(--text)}
+.job.done .st{color:var(--ok)} .job.error .st{color:var(--err)}
+.jerr{color:#ffb3c0;font-size:13px;margin-top:6px}
+.jact{display:flex;gap:6px;align-items:flex-start}
+.jact button{background:var(--panel2);border:1px solid var(--line);border-radius:8px;height:32px;padding:0 10px;font-size:13px;color:var(--muted)}
+.jact button:hover{color:var(--text)}
+.jact button.x{width:32px;padding:0}
+.empty{color:var(--dim);text-align:center;padding:36px 0;border:1px dashed var(--line);border-radius:var(--radius);font-size:14px}
+
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:20px;z-index:10}
+.modal.show{display:flex}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;width:100%;max-width:520px;padding:22px;box-shadow:var(--shadow);max-height:90vh;overflow:auto}
+.card h3{margin:0 0 16px;font-size:18px}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+.field small{display:block;color:var(--dim);font-size:12px;margin-top:5px}
+.field input[type=text],.field input[type=number],.field select{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;outline:none}
+.field input:focus,.field select:focus{border-color:var(--accent)}
+.row{display:flex;gap:8px}
+.row .btn{height:42px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.cardfoot{display:flex;justify-content:flex-end;gap:8px;margin-top:6px}
+.cardfoot .btn{height:42px}
+
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);background:var(--panel2);border:1px solid var(--line);padding:10px 16px;border-radius:12px;opacity:0;transition:.25s;font-size:14px;z-index:20;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media (max-width:640px){
+  .pv{flex-direction:column}.thumb{width:100%}
+  .job{flex-wrap:wrap}.job .jt{width:90px}
+  .jact{width:100%;justify-content:flex-end}
+  .sites{display:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo"><i><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="M7 11l5 5 5-5"/><path d="M5 20h14"/></svg></i>GrabIt<span class="dl">Downloader</span></div>
+    <div class="pills" id="pills"></div>
+    <button class="iconbtn" id="openFolder" title="İndirme klasörünü aç"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></button>
+    <button class="iconbtn" id="quitBtn" title="GrabIt'i kapat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v9"/><path d="M6.4 6.4a8 8 0 1 0 11.2 0"/></svg></button>
+    <button class="iconbtn" id="openSettings" title="Ayarlar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+  </header>
+
+  <section class="hero">
+    <div class="inputrow">
+      <textarea id="url" rows="1" placeholder="Video linkini yapıştır… (birden fazla link için her satıra bir link)" spellcheck="false" autofocus></textarea>
+      <button class="btn" id="pasteBtn" title="Panodan yapıştır">Yapıştır</button>
+      <button class="btn primary" id="fetchBtn">Getir</button>
+    </div>
+    <div class="sub">
+      <label class="check"><input type="checkbox" id="playlist"> Oynatma listesiyse tümünü indir</label>
+      <span class="sites">YouTube · Instagram · TikTok · Pinterest · Facebook · X · Vimeo ve 1000+ site</span>
+    </div>
+
+    <div class="loading" id="loading"><div class="spin"></div><span>Video bilgileri alınıyor…</span></div>
+    <div class="errbox" id="errbox"></div>
+
+    <div class="preview" id="preview">
+      <div class="pv">
+        <div class="thumb" id="pvThumb"><span id="pvDur"></span></div>
+        <div class="pvmeta">
+          <div class="pvtitle" id="pvTitle"></div>
+          <div class="pvsub" id="pvSub"></div>
+          <div class="qual" id="qual"></div>
+        </div>
+      </div>
+      <div class="pvactions">
+        <span class="hint" id="pvHint"></span>
+        <button class="btn" id="cancelPv">Vazgeç</button>
+        <button class="btn primary" id="dlBtn">İndir</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="listhead">
+    <h2>İndirmeler</h2>
+    <button class="tab on" data-f="all">Tümü</button>
+    <button class="tab" data-f="active">Aktif</button>
+    <button class="tab" data-f="done">Biten</button>
+    <button class="linkbtn" id="clearDone">Bitenleri temizle</button>
+  </div>
+  <div class="jobs" id="jobs"></div>
+  <footer>HAKAN TOPLU 2026</footer>
+</div>
+
+<div class="modal" id="settings">
+  <div class="card">
+    <h3>Ayarlar</h3>
+    <div class="field">
+      <label>İndirme klasörü</label>
+      <div class="row"><input type="text" id="sDir"><button class="btn" id="pickDir">Seç…</button></div>
+    </div>
+    <div class="two">
+      <div class="field">
+        <label>Aynı anda kaç indirme</label>
+        <input type="number" id="sPar" min="1" max="20">
+      </div>
+      <div class="field">
+        <label>Video başına bağlantı</label>
+        <input type="number" id="sFrag" min="1" max="32">
+        <small>Yüksek = daha hızlı (8 önerilir)</small>
+      </div>
+    </div>
+    <div class="two">
+      <div class="field">
+        <label>Varsayılan kalite</label>
+        <select id="sQual">
+          <option value="best">En iyi</option><option value="2160">4K</option><option value="1440">2K</option>
+          <option value="1080">1080p</option><option value="720">720p</option><option value="compat">Uyumlu MP4</option>
+          <option value="mp3">MP3</option>
+        </select>
+        <small>Toplu linklerde kullanılır</small>
+      </div>
+      <div class="field">
+        <label>Dosya formatı</label>
+        <select id="sCont">
+          <option value="auto">Otomatik (MP4/MKV)</option>
+          <option value="mp4">Her zaman MP4</option>
+          <option value="mkv">Her zaman MKV</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label>Tarayıcı çerezlerini kullan</label>
+      <select id="sCook">
+        <option value="">Kullanma</option>
+        <option value="chrome">Chrome</option><option value="firefox">Firefox</option><option value="edge">Edge</option>
+        <option value="safari">Safari</option><option value="brave">Brave</option><option value="opera">Opera</option>
+      </select>
+      <small>Instagram, Facebook, yaş sınırlı ve gizli videolar için gerekir. O tarayıcıda siteye giriş yapmış olman yeterli. Windows'ta Chrome/Edge açıkken okunamazsa Firefox seç.</small>
+    </div>
+    <div class="two">
+      <div class="field">
+        <label>Hız sınırı (MB/sn)</label>
+        <input type="number" id="sLim" min="0" max="1000">
+        <small>0 = sınırsız</small>
+      </div>
+      <div class="field">
+        <label>&nbsp;</label>
+        <label class="check" style="margin-top:10px"><input type="checkbox" id="sSubs"> Altyazıları da indir (TR/EN)</label>
+      </div>
+    </div>
+    <div class="cardfoot">
+      <button class="btn" id="closeSettings">Kapat</button>
+      <button class="btn primary" id="saveSettings">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const api = async (path, body) => {
+  const opt = body === undefined ? {} : {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)};
+  const r = await fetch(path, opt);
+  let j = {};
+  try { j = await r.json(); } catch(e) {}
+  if (!r.ok || j.ok === false) throw new Error(j.error || ('Sunucu hatası ' + r.status));
+  return j;
+};
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const toast = (msg, ms=2600) => { const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'), ms); };
+const fmtSize = n => { if(!n) return ''; const u=['B','KB','MB','GB','TB']; let i=0; while(n>=1024&&i<4){n/=1024;i++} return (i<2?n.toFixed(0):n.toFixed(1))+' '+u[i]; };
+const fmtDur = s => { s=Math.round(s||0); if(!s) return ''; const h=Math.floor(s/3600), m=Math.floor(s%3600/60), x=s%60; return (h? h+':'+String(m).padStart(2,'0') : m)+':'+String(x).padStart(2,'0'); };
+const fmtEta = s => { if(s==null||s<0) return ''; s=Math.round(s); if(s<60) return s+' sn'; if(s<3600) return Math.floor(s/60)+' dk '+(s%60)+' sn'; return Math.floor(s/3600)+' sa '+Math.floor(s%3600/60)+' dk'; };
+const urlsIn = t => (t.match(/https?:\/\/[^\s<>"']+/gi) || []);
+
+let current = null, chosen = 'best', settings = {}, filter = 'all', lastJobs = [];
+
+// ---------- durum ----------
+async function loadStatus(){
+  try{
+    const s = await api('/api/status');
+    const p = [];
+    p.push(`<span class="pill ${s.ytdlp_age_days>75?'warn':'ok'}" title="İndirme motoru sürümü"><b></b>yt-dlp ${esc(s.ytdlp)}</span>`);
+    p.push(`<span class="pill ${s.ffmpeg?'ok':'bad'}" title="${s.ffmpeg?'4K/8K birleştirme ve MP3 hazır':'ffmpeg yok: 4K ve MP3 çalışmaz. Başlatma dosyasını tekrar çalıştır.'}"><b></b>ffmpeg</span>`);
+    p.push(`<span class="pill ${s.js?'ok':'bad'}" title="${s.js?'YouTube imza çözücü hazır ('+esc(s.js_name)+')':'deno yok: YouTube yüksek kaliteler çalışmayabilir. Başlatma dosyasını tekrar çalıştır.'}"><b></b>${s.js?esc(s.js_name):'deno'}</span>`);
+    $('#pills').innerHTML = p.join('');
+  }catch(e){ $('#pills').innerHTML = '<span class="pill bad"><b></b>Bağlantı yok</span>'; }
+}
+
+// ---------- link girişi ----------
+const ta = $('#url');
+const autoGrow = () => { ta.style.height='auto'; ta.style.height=Math.min(ta.scrollHeight,220)+'px'; updateBtn(); };
+const updateBtn = () => { const n = urlsIn(ta.value).length; $('#fetchBtn').textContent = n>1 ? `${n} linki indir` : 'Getir'; };
+ta.addEventListener('input', autoGrow);
+ta.addEventListener('keydown', e => { if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); go(); } });
+ta.addEventListener('paste', () => setTimeout(() => { autoGrow(); if(urlsIn(ta.value).length===1) go(); }, 0));
+$('#pasteBtn').onclick = async () => {
+  let txt = '';
+  try{ txt = (await api('/api/clipboard', {})).text || ''; }catch(e){}
+  if(!txt){ try{ txt = await navigator.clipboard.readText(); }catch(e){} }
+  if(!txt.trim()){ ta.focus(); toast('Panoda link yok. Linki kopyalayıp tekrar dene ya da ⌘V / Ctrl+V ile yapıştır.'); return; }
+  ta.value = txt.trim(); autoGrow(); if(urlsIn(ta.value).length) go();
+};
+$('#fetchBtn').onclick = go;
+
+function showErr(msg){ const b=$('#errbox'); b.textContent=msg; b.classList.toggle('show', !!msg); }
+function resetPreview(){ $('#preview').classList.remove('show'); current=null; }
+
+async function go(){
+  const urls = urlsIn(ta.value);
+  showErr('');
+  if(!urls.length){ showErr('Geçerli bir link yapıştır (https:// ile başlamalı).'); return; }
+  if(urls.length>1){
+    try{
+      const r = await api('/api/download', {urls, quality: settings.default_quality||'best', playlist: $('#playlist').checked});
+      toast(`${r.jobs.length} indirme sıraya eklendi`);
+      ta.value=''; autoGrow(); resetPreview(); refreshJobs();
+    }catch(e){ showErr(e.message); }
+    return;
+  }
+  resetPreview();
+  $('#loading').classList.add('show'); $('#fetchBtn').disabled = true;
+  try{
+    const r = await api('/api/info', {url: urls[0], playlist: $('#playlist').checked});
+    current = r.info; showPreview(current);
+  }catch(e){ showErr(e.message); }
+  finally{ $('#loading').classList.remove('show'); $('#fetchBtn').disabled = false; }
+}
+
+function showPreview(i){
+  $('#pvThumb').style.backgroundImage = i.thumbnail ? `url("${i.thumbnail.replace(/"/g,'%22')}")` : 'none';
+  $('#pvDur').textContent = i.is_playlist ? `${i.count} video` : fmtDur(i.duration);
+  $('#pvDur').style.display = $('#pvDur').textContent ? '' : 'none';
+  $('#pvTitle').textContent = i.title || i.url;
+  $('#pvSub').textContent = [i.uploader, i.site].filter(Boolean).join(' · ');
+  const pref = settings.default_quality || 'best';
+  chosen = i.options.some(o=>o.id===pref) ? pref : 'best';
+  $('#qual').innerHTML = i.options.map(o => `<button class="q ${o.id===chosen?'on':''}" data-q="${o.id}">${esc(o.label)}<small>${o.size?'~'+esc(o.size):(o.id==='compat'?'her cihazda açılır':(o.id==='mp3'?'320 kbps':'&nbsp;'))}</small></button>`).join('');
+  document.querySelectorAll('.q').forEach(b => b.onclick = () => { chosen=b.dataset.q; document.querySelectorAll('.q').forEach(x=>x.classList.toggle('on', x===b)); hint(); });
+  hint();
+  $('#preview').classList.add('show');
+}
+function hint(){
+  const h = $('#pvHint');
+  if(current?.duration > 3600) h.textContent = `Uzun video (${fmtDur(current.duration)}). Durdurursan kaldığı yerden devam eder.`;
+  else if(chosen==='compat') h.textContent = 'H.264 MP4: her oynatıcıda açılır, en fazla 1080p.';
+  else h.textContent = '';
+}
+$('#cancelPv').onclick = () => { resetPreview(); ta.focus(); };
+$('#dlBtn').onclick = async () => {
+  if(!current) return;
+  try{
+    await api('/api/download', {url: current.url, quality: chosen, playlist: current.is_playlist,
+      meta: {title: current.title, thumbnail: current.thumbnail, uploader: current.uploader, duration: current.duration, site: current.site}});
+    toast('İndirme başladı');
+    ta.value=''; autoGrow(); resetPreview(); refreshJobs(); ta.focus();
+  }catch(e){ showErr(e.message); }
+};
+
+// ---------- indirmeler ----------
+document.querySelectorAll('.tab').forEach(t => t.onclick = () => { filter=t.dataset.f; document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x===t)); renderJobs(); });
+$('#clearDone').onclick = async () => { await api('/api/clear', {}); refreshJobs(); };
+$('#openFolder').onclick = () => api('/api/open-folder', {}).catch(e=>toast(e.message));
+
+const STATUS = {queued:'Sırada', running:'', stopped:'Durduruldu', done:'Tamamlandı', error:'Hata'};
+function renderJobs(){
+  let js = lastJobs;
+  if(filter==='active') js = js.filter(j => j.status==='running'||j.status==='queued'||j.status==='stopped');
+  if(filter==='done') js = js.filter(j => j.status==='done');
+  const box = $('#jobs');
+  if(!js.length){ box.innerHTML = `<div class="empty">${lastJobs.length?'Bu filtrede indirme yok.':'Henüz indirme yok. Yukarıya bir link yapıştır.'}</div>`; return; }
+  box.innerHTML = js.map(j => {
+    const pct = j.status==='done' ? 100 : (j.percent||0);
+    const st = j.status==='running' ? (j.stage||'İndiriliyor') : (j.status==='stopped' ? j.stage : STATUS[j.status]);
+    const bits = [];
+    if(j.status==='running' || j.status==='stopped'){
+      if(pct) bits.push(pct.toFixed(1)+'%');
+      if(j.total) bits.push(fmtSize(j.downloaded)+' / '+fmtSize(j.total));
+      if(j.speed) bits.push(fmtSize(j.speed)+'/sn');
+      if(j.eta!=null && j.status==='running') bits.push('kalan '+fmtEta(j.eta));
+    } else if(j.status==='done' && j.total){ bits.push(fmtSize(j.total)); }
+    const acts = [];
+    if(j.status==='running'||j.status==='queued') acts.push(`<button data-a="stop">Durdur</button>`);
+    if(j.status==='stopped'||j.status==='error') acts.push(`<button data-a="resume">${j.status==='error'?'Tekrar dene':'Devam et'}</button>`);
+    if(j.status==='done'){ acts.push(`<button data-a="open">Aç</button>`); acts.push(`<button data-a="reveal">Klasörde göster</button>`); }
+    acts.push(`<button class="x" data-a="remove" title="Listeden kaldır (dosya silinmez)">✕</button>`);
+    return `<div class="job ${j.status}" data-id="${j.id}">
+      <div class="jt" style="background-image:${j.thumbnail?`url(&quot;${esc(j.thumbnail)}&quot;)`:'none'}"></div>
+      <div class="jb">
+        <div class="jtitle" title="${esc(j.title)}">${esc(j.title)}</div>
+        <div class="jmeta"><span class="tag">${esc(j.quality_label)}</span>${j.site?`<span>${esc(j.site)}</span>`:''}${j.duration?`<span>${fmtDur(j.duration)}</span>`:''}${j.playlist&&j.item_count?`<span>${j.item_count} video</span>`:''}</div>
+        <div class="bar"><i style="width:${pct}%"></i></div>
+        <div class="jstate"><span class="st">${esc(st)}</span>${bits.map(b=>`<span>${esc(b)}</span>`).join('')}</div>
+        ${j.status==='error'&&j.error?`<div class="jerr">${esc(j.error)}</div>`:''}
+      </div>
+      <div class="jact">${acts.join('')}</div>
+    </div>`;
+  }).join('');
+}
+$('#jobs').addEventListener('click', async e => {
+  const b = e.target.closest('button[data-a]'); if(!b) return;
+  const id = b.closest('.job').dataset.id;
+  try{ await api(`/api/jobs/${id}/${b.dataset.a}`, {}); refreshJobs(); }
+  catch(err){ toast(err.message); }
+});
+
+let pollTimer = null;
+async function refreshJobs(){
+  clearTimeout(pollTimer);
+  try{
+    const r = await api('/api/jobs');
+    lastJobs = r.jobs; renderJobs();
+    const active = r.jobs.some(j => j.status==='running'||j.status==='queued');
+    document.title = active ? `(${r.jobs.filter(j=>j.status==='running').length}) GrabIt Downloader` : 'GrabIt Downloader';
+    pollTimer = setTimeout(refreshJobs, active ? 800 : 3000);
+  }catch(e){ pollTimer = setTimeout(refreshJobs, 3000); }
+}
+
+// ---------- ayarlar ----------
+async function loadSettings(){ settings = (await api('/api/settings')).settings; }
+function fillSettings(){
+  $('#sDir').value = settings.download_dir; $('#sPar').value = settings.max_parallel; $('#sFrag').value = settings.fragments;
+  $('#sQual').value = settings.default_quality; $('#sCont').value = settings.container; $('#sCook').value = settings.cookies_browser;
+  $('#sLim').value = settings.speed_limit_mb; $('#sSubs').checked = !!settings.subtitles;
+}
+$('#openSettings').onclick = () => { fillSettings(); $('#settings').classList.add('show'); };
+$('#closeSettings').onclick = () => $('#settings').classList.remove('show');
+$('#settings').onclick = e => { if(e.target.id==='settings') $('#settings').classList.remove('show'); };
+$('#pickDir').onclick = async () => {
+  try{ const r = await api('/api/pick-folder', {}); settings = r.settings; $('#sDir').value = settings.download_dir; }
+  catch(e){ if(e.message) toast(e.message); }
+};
+$('#saveSettings').onclick = async () => {
+  try{
+    settings = (await api('/api/settings', {download_dir:$('#sDir').value, max_parallel:$('#sPar').value, fragments:$('#sFrag').value,
+      default_quality:$('#sQual').value, container:$('#sCont').value, cookies_browser:$('#sCook').value,
+      speed_limit_mb:$('#sLim').value, subtitles:$('#sSubs').checked})).settings;
+    $('#settings').classList.remove('show'); toast('Ayarlar kaydedildi');
+  }catch(e){ toast(e.message); }
+};
+document.addEventListener('keydown', e => { if(e.key==='Escape') $('#settings').classList.remove('show'); });
+
+$('#quitBtn').onclick = async () => {
+  const active = lastJobs.filter(j => j.status==='running'||j.status==='queued').length;
+  const msg = active ? `${active} indirme sürüyor. Kapatırsan durur, GrabIt'i tekrar açınca "Devam et" ile kaldığı yerden sürer. Kapatılsın mı?` : 'GrabIt kapatılsın mı?';
+  if(!confirm(msg)) return;
+  try{ await api('/api/quit', {}); }catch(e){}
+  clearTimeout(pollTimer);
+  document.body.innerHTML = '<div class="wrap" style="text-align:center;padding-top:120px"><div class="logo" style="justify-content:center"><i><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="M7 11l5 5 5-5"/><path d="M5 20h14"/></svg></i>GrabIt</div><p style="color:var(--muted);margin-top:18px">GrabIt kapatıldı. Bu sekmeyi kapatabilirsin.</p></div>';
+};
+
+loadStatus(); loadSettings().catch(()=>{}); refreshJobs();
+</script>
+</body>
+</html>

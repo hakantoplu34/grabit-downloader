@@ -1,0 +1,6 @@
+*.bat text eol=crlf
+*.sh text eol=lf
+*.command text eol=lf
+mac/**/MacOS/* text eol=lf
+*.icns binary
+*.png binary

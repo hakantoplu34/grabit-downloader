@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleName</key>
+	<string>GrabIt Downloader</string>
+	<key>CFBundleDisplayName</key>
+	<string>GrabIt Downloader</string>
+	<key>CFBundleIdentifier</key>
+	<string>local.grabit.app</string>
+	<key>CFBundleVersion</key>
+	<string>1.1.0</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.1.0</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleExecutable</key>
+	<string>GrabIt</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>tr</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>11.0</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>© 2026 Hakan Toplu</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>GrabIt kurulum durumunu bildirim ve pencerelerle göstermek için kullanır.</string>
+	<key>NSDownloadsFolderUsageDescription</key>
+	<string>İndirdiğin videolar İndirilenler/GrabIt klasörüne kaydedilir.</string>
+</dict>
+</plist>
