@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Release zip'lerini üretir: dist/GrabIt-Downloader-Mac.zip ve dist/GrabIt-Downloader-Windows.zip
+"""Release zip'lerini üretir: indir/GrabIt-Downloader-Mac.zip ve indir/GrabIt-Downloader-Windows.zip
 
 Mac paketi src/ içindeki güncel programı uygulama paketinin içine kopyalayarak hazırlanır,
 böylece kod tek yerde (src/) tutulur.
@@ -13,7 +13,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 SRC = ROOT / "src"
 APP = ROOT / "mac" / "GrabIt Downloader.app"
-DIST = ROOT / "dist"
+DIST = ROOT / "indir"
 APP_FILES = ["grabit.py", "requirements.txt"]
 
 

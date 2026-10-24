@@ -5,7 +5,7 @@
 
 REPO="hakantoplu34/grabit-downloader"
 APP="GrabIt Downloader"
-ZIP_URL="https://github.com/$REPO/releases/latest/download/GrabIt-Downloader-Mac.zip"
+ZIP_URL="https://raw.githubusercontent.com/$REPO/main/indir/GrabIt-Downloader-Mac.zip"
 
 say()  { printf "\n  %s\n" "$1"; }
 fail() { printf "\n  [HATA] %s\n\n" "$1"; exit 1; }
